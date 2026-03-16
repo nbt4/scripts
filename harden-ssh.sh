@@ -89,12 +89,14 @@ check()   { (( CHECKS_TOTAL++ )) || true; echo -e "  ${IC_CHECK}  ${DIM}Prüfe:$
 
 ask() {
   local prompt="$1"; local -n _askvar=$2; local default="${3:-}"
-  echo "" > /dev/tty
+  exec 3>/dev/tty
+  echo "" >&3
   if [[ -n "$default" ]]; then
-    printf "  ${CYAN}?${RESET}  ${BOLD}%s${RESET} ${DIM}[Standard: %s]${RESET}: " "$prompt" "$default" > /dev/tty
+    printf "  ${CYAN}?${RESET}  ${BOLD}%s${RESET} ${DIM}[Standard: %s]${RESET}: " "$prompt" "$default" >&3
   else
-    printf "  ${CYAN}?${RESET}  ${BOLD}%s${RESET}: " "$prompt" > /dev/tty
+    printf "  ${CYAN}?${RESET}  ${BOLD}%s${RESET}: " "$prompt" >&3
   fi
+  exec 3>&-
   read -r _askvar < /dev/tty
   [[ -z "$_askvar" && -n "$default" ]] && _askvar="$default"
 }
@@ -254,7 +256,7 @@ if [[ "$USER_ACTION" == "create" ]]; then
   echo -e "  🔑  ${BOLD}Passwort für '${NEW_USERNAME}' setzen${RESET} ${DIM}(für sudo benötigt)${RESET}"
   echo ""
   while true; do
-    if passwd "$NEW_USERNAME"; then
+    if passwd "$NEW_USERNAME" < /dev/tty; then
       ok "Passwort gesetzt"
       break
     else
