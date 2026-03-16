@@ -90,7 +90,7 @@ else
   echo "  [1] Vorhandenen Benutzer verwenden"
   echo "  [2] Neuen Benutzer anlegen"
   echo ""
-  read -rp "  Auswahl [1/2]: " USER_ACTION_INPUT
+  read -rp "  Auswahl [1/2]: " USER_ACTION_INPUT < /dev/tty
   [[ "$USER_ACTION_INPUT" == "2" ]] && USER_ACTION="create" || USER_ACTION="existing"
 fi
 
@@ -101,7 +101,7 @@ if [[ "$USER_ACTION" == "create" ]]; then
   echo ""
 
   while true; do
-    read -rp "  Benutzername: " NEW_USERNAME
+    read -rp "  Benutzername: " NEW_USERNAME < /dev/tty
     if [[ -z "$NEW_USERNAME" ]]; then
       echo "  ⚠  Benutzername darf nicht leer sein."
       continue
@@ -128,7 +128,7 @@ if [[ "$USER_ACTION" == "create" ]]; then
   fi
 
   echo ""
-  read -rp "  Benutzer zur Gruppe '${SUDO_GROUP}' hinzufügen? [J/n]: " ADD_SUDO
+  read -rp "  Benutzer zur Gruppe '${SUDO_GROUP}' hinzufügen? [J/n]: " ADD_SUDO < /dev/tty
   ADD_SUDO="${ADD_SUDO:-J}"
 
   # Benutzer anlegen mit Homeverzeichnis und bash als Shell
@@ -164,7 +164,7 @@ else
     TARGET_USER="${NORMAL_USERS[0]}"
     echo "  ->  Verwende Benutzer: ${TARGET_USER}"
   else
-    read -rp "  Benutzername eingeben: " TARGET_USER
+    read -rp "  Benutzername eingeben: " TARGET_USER < /dev/tty
     if ! id "$TARGET_USER" &>/dev/null; then
       echo "${LOG_PREFIX} ⚠  Benutzer '${TARGET_USER}' nicht gefunden — Schritt übersprungen."
       TARGET_USER=""
@@ -185,13 +185,13 @@ else
 fi
 echo "  [2] Überspringen (Key bereits vorhanden)"
 echo ""
-read -rp "  Auswahl [1/2]: " KEY_CHOICE
+read -rp "  Auswahl [1/2]: " KEY_CHOICE < /dev/tty
 
 if [[ "$KEY_CHOICE" == "1" ]]; then
 
   # Falls noch kein Target-User gesetzt, jetzt abfragen
   if [[ -z "$TARGET_USER" ]]; then
-    read -rp "  Benutzername: " TARGET_USER
+    read -rp "  Benutzername: " TARGET_USER < /dev/tty
     if ! id "$TARGET_USER" &>/dev/null; then
       echo "${LOG_PREFIX} ⚠  Benutzer '${TARGET_USER}' nicht gefunden — Key-Setup übersprungen."
       TARGET_USER=""
@@ -213,10 +213,10 @@ if [[ "$KEY_CHOICE" == "1" ]]; then
 
     echo ""
     echo "  Füge deinen Public Key ein (ssh-rsa / ssh-ed25519 / ecdsa ...)."
-    echo "  Abschließen mit ENTER, dann Strg+D:"
+    echo "  Abschließen mit ENTER:"
     echo ""
 
-    KEY_INPUT=$(cat)
+    read -r KEY_INPUT < /dev/tty
 
     if [[ -z "$KEY_INPUT" ]]; then
       echo "${LOG_PREFIX} ⚠  Kein Key eingegeben — Schritt übersprungen."
