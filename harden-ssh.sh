@@ -88,17 +88,19 @@ info()    { echo -e "  ${IC_INFO}  ${DIM}$*${RESET}"; }
 check()   { (( CHECKS_TOTAL++ )) || true; echo -e "  ${IC_CHECK}  ${DIM}Prüfe:${RESET} $*"; }
 
 ask() {
-  local prompt="$1"; local -n _askvar=$2; local default="${3:-}"
-  exec 3>/dev/tty
-  echo "" >&3
+  local prompt="$1"
+  local default="${2:-}"
+  echo "" > /dev/tty
   if [[ -n "$default" ]]; then
-    printf "  ${CYAN}?${RESET}  ${BOLD}%s${RESET} ${DIM}[Standard: %s]${RESET}: " "$prompt" "$default" >&3
+    printf "  ${CYAN}?${RESET}  ${BOLD}%s${RESET} ${DIM}[Standard: %s]${RESET}: " "$prompt" "$default" > /dev/tty
   else
-    printf "  ${CYAN}?${RESET}  ${BOLD}%s${RESET}: " "$prompt" >&3
+    printf "  ${CYAN}?${RESET}  ${BOLD}%s${RESET}: " "$prompt" > /dev/tty
   fi
-  exec 3>&-
-  read -r _askvar < /dev/tty
-  [[ -z "$_askvar" && -n "$default" ]] && _askvar="$default"
+  ASK_RESULT=""
+  read -r ASK_RESULT < /dev/tty || true
+  if [[ -z "$ASK_RESULT" && -n "$default" ]]; then
+    ASK_RESULT="$default"
+  fi
 }
 
 # =============================================================================
@@ -201,7 +203,8 @@ else
   echo ""
   echo -e "  ${BOLD}[1]${RESET} Vorhandenen Benutzer verwenden"
   echo -e "  ${BOLD}[2]${RESET} Neuen Benutzer anlegen"
-  ask "Auswahl [1/2]" USER_ACTION_INPUT "1"
+  ask "Auswahl [1/2]" "1"
+  USER_ACTION_INPUT="$ASK_RESULT"
   [[ "$USER_ACTION_INPUT" == "2" ]] && USER_ACTION="create" || USER_ACTION="existing"
 fi
 
@@ -210,7 +213,8 @@ if [[ "$USER_ACTION" == "create" ]]; then
   print_section "Neuen Benutzer anlegen"
 
   while true; do
-    ask "Benutzername" NEW_USERNAME
+    ask "Benutzername"
+  NEW_USERNAME="$ASK_RESULT"
     if [[ -z "$NEW_USERNAME" ]]; then
       warn "Benutzername darf nicht leer sein."; continue
     fi
@@ -237,7 +241,8 @@ if [[ "$USER_ACTION" == "create" ]]; then
     ok "Gruppe 'sudo' neu angelegt"
   fi
 
-  ask "Zur Gruppe '${SUDO_GROUP}' hinzufügen? [J/n]" ADD_SUDO "J"
+  ask "Zur Gruppe '${SUDO_GROUP}' hinzufügen? [J/n]" "J"
+  ADD_SUDO="$ASK_RESULT"
 
   echo ""
   check "Benutzer '${NEW_USERNAME}' anlegen ..."
@@ -275,7 +280,8 @@ else
     check "Einzigen verfügbaren Benutzer automatisch auswählen ..."
     ok "Verwende Benutzer: ${BOLD}${TARGET_USER}${RESET}"
   else
-    ask "Benutzername eingeben" TARGET_USER
+    ask "Benutzername eingeben"
+  TARGET_USER="$ASK_RESULT"
     check "Benutzer '${TARGET_USER}' prüfen ..."
     if ! id "$TARGET_USER" &>/dev/null; then
       warn "Benutzer '${TARGET_USER}' nicht gefunden — Schritt übersprungen."
@@ -297,12 +303,14 @@ else
   echo -e "  ${BOLD}[1]${RESET} Key jetzt eintragen"
 fi
 echo -e "  ${BOLD}[2]${RESET} Überspringen ${DIM}(Key bereits vorhanden)${RESET}"
-ask "Auswahl [1/2]" KEY_CHOICE "2"
+ask "Auswahl [1/2]" "2"
+  KEY_CHOICE="$ASK_RESULT"
 
 if [[ "$KEY_CHOICE" == "1" ]]; then
 
   if [[ -z "$TARGET_USER" ]]; then
-    ask "Benutzername" TARGET_USER
+    ask "Benutzername"
+  TARGET_USER="$ASK_RESULT"
     check "Benutzer '${TARGET_USER}' prüfen ..."
     if ! id "$TARGET_USER" &>/dev/null; then
       warn "Benutzer '${TARGET_USER}' nicht gefunden — Key-Setup übersprungen."
